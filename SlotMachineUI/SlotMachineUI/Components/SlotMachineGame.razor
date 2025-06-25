@@ -1,0 +1,199 @@
+@using SlotMachineUI.Models
+@using SlotMachineUI.Services
+@inject ISlotMachineService SlotMachineService
+
+<MudCard Style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white;">
+    <MudCardContent>
+        <MudText Typo="Typo.h6" Class="mb-4 text-center" Style="color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); font-weight: bold;">
+            🎰 Slot Machine
+        </MudText>
+        
+        <!-- Reels Display -->
+        <MudPaper Class="pa-6 mb-4" Style="background: rgba(89, 74, 226, 1); border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.3);">
+            <MudGrid>
+                <MudItem xs="4">
+                    <MudPaper Class="pa-4 text-center" Style="background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%); min-height: 120px; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                        <MudText Typo="Typo.h2" Color="Color.Primary" Style="font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">
+                            @(spinResult[0])
+                        </MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="4">
+                    <MudPaper Class="pa-4 text-center" Style="background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%); min-height: 120px; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                        <MudText Typo="Typo.h2" Color="Color.Primary" Style="font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">
+                            @(spinResult[1])
+                        </MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="4">
+                    <MudPaper Class="pa-4 text-center" Style="background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%); min-height: 120px; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                        <MudText Typo="Typo.h2" Color="Color.Primary" Style="font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">
+                            @(spinResult[2])
+                        </MudText>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+        
+        <!-- Multiplier Control -->
+        <MudContainer Class="d-flex justify-center mb-4">
+            <MudNumericField T="decimal" @bind-Value="multiplier" 
+                             Label="Multiplier"
+                             Format="F1"
+                             Variant="Variant.Filled"
+                             Min="1m"
+                             Max="10m"
+                             Step="0.5m"
+                             Style="max-width: 200px; background: rgba(255,255,255,0.58); border-radius: 8px;" />
+        </MudContainer>
+        
+        <!-- Balance and Total Bet Display -->
+        <MudContainer Class="d-flex justify-center mb-4">
+            <MudText Typo="Typo.h5"
+                     Class="text-center mr-2"
+                     Style="color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
+                Balance: @(User.Balance.ToString("C2"))
+            </MudText>
+            <MudText Typo="Typo.h5" 
+                     Class="text-center" 
+                     Style="color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
+                Total Bet: @(TotalBetAmount.ToString("C2"))
+            </MudText>            
+        </MudContainer>
+        
+        <!-- Central Spin Button -->
+        <MudContainer Class="d-flex justify-center mb-4">
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       OnClick="Spin"
+                       Disabled="!canSpin || isSpinning"
+                       Size="Size.Large"
+                       Style="width: 120px; height: 120px; border-radius: 50%; font-size: 1.5rem; font-weight: bold; box-shadow: 0 8px 16px rgba(0,0,0,0.4); background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);">
+                @if (isSpinning)
+                {
+                    <MudProgressCircular Size="Size.Medium" Indeterminate="true" />
+                }
+                else
+                {
+                    <span>SPIN</span>
+                }
+            </MudButton>
+        </MudContainer>
+        
+        <!-- Win Display -->
+        @if (lastGame != null && lastGame.IsWin)
+        {
+            <MudContainer Class="d-flex justify-center mb-4">
+                <MudText Typo="Typo.h5" 
+                         Class="text-center" 
+                         Style="color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-weight: bold; background: rgba(76, 175, 80, 0.8); padding: 12px 24px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+                    @($"🎉 You won {lastGame.WinAmount:C2}!")
+                </MudText>
+            </MudContainer>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter]
+    public User User { get; set; } = null!;
+    
+    [Parameter]
+    public EventCallback<Game> OnSpin { get; set; }
+    
+    [Parameter]
+    public EventCallback<User> OnUserUpdated { get; set; }
+
+    private decimal multiplier = 1.0m;
+    private const decimal BaseBetAmount = 1.0m; // Base amount that gets multiplied
+    private string[] spinResult = new string[3] { "?", "?", "?" };
+    private Game? lastGame;
+    private bool isSpinning = false;
+    private bool canSpin => User.CanPlay;
+    
+    private decimal TotalBetAmount => multiplier * BaseBetAmount;
+
+    protected override void OnParametersSet()
+    {
+        // Update display when lastGame changes
+        if (lastGame != null)
+        {
+            UpdateSpinDisplay(lastGame.SpinResult);
+        }
+    }
+
+    private void UpdateSpinDisplay(string spinResultString)
+    {
+        if (string.IsNullOrEmpty(spinResultString))
+            return;
+
+        var symbols = spinResultString.Split(',');
+        for (int i = 0; i < Math.Min(symbols.Length, 3); i++)
+        {
+            spinResult[i] = SymbolHelper.GetSymbolEmoji(symbols[i].Trim());
+        }
+    }
+
+    private async Task Spin()
+    {
+        if (!canSpin || isSpinning)
+            return;
+
+        isSpinning = true;
+        
+        // Reset display to show spinning state
+        spinResult = new string[3] { "🎰", "🎰", "🎰" };
+        await InvokeAsync(StateHasChanged);
+
+        // Add spinning animation effect
+        await AnimateSpinning();
+
+        try
+        {
+            Console.WriteLine($"Spinning for user {User.UserId} with multiplier {multiplier} (total bet: {TotalBetAmount})");
+            lastGame = await SlotMachineService.SpinAsync(User.UserId, TotalBetAmount);
+            
+            if (lastGame != null)
+            {
+                Console.WriteLine($"Spin result: {lastGame.SpinResult}");
+                // Update the display with the actual spin result
+                UpdateSpinDisplay(lastGame.SpinResult);
+                await OnSpin.InvokeAsync(lastGame);
+            }
+            else
+            {
+                Console.WriteLine("Spin returned null result");
+                // If spin failed, reset to default state
+                spinResult = new string[3] { "?", "?", "?" };
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Spin error: {ex.Message}");
+            // Reset to default state on error
+            spinResult = new string[3] { "?", "?", "?" };
+        }
+        finally
+        {
+            isSpinning = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task AnimateSpinning()
+    {
+        // Animate spinning symbols for 1 second
+        var symbols = new[] { "🎰", "9️⃣", "🔟", "👨‍⚖️", "👸", "👑", "🅰️", "🎁", "💰" };
+        var random = new Random();
+        
+        for (int i = 0; i < 10; i++) // 10 animation frames
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                spinResult[j] = symbols[random.Next(symbols.Length)];
+            }
+            await InvokeAsync(StateHasChanged);
+            await Task.Delay(100); // 100ms delay between frames
+        }
+    }
+} 

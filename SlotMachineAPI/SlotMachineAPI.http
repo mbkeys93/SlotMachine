@@ -1,0 +1,74 @@
+@SlotMachineAPI_HostAddress = https://localhost:7076
+
+### Slot Machine API Tests
+
+### 1. Create a new user
+POST {{SlotMachineAPI_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "userName": "TestPlayer"
+}
+
+### 2. Get user by ID
+GET {{SlotMachineAPI_HostAddress}}/api/users/id/1
+
+### 3. Get user by username
+GET {{SlotMachineAPI_HostAddress}}/api/users/username/TestPlayer
+
+### 4. Get all users
+GET {{SlotMachineAPI_HostAddress}}/api/users
+
+### 5. Add cash to user account
+POST {{SlotMachineAPI_HostAddress}}/api/users/1/balance
+Content-Type: application/json
+
+{
+  "amount": 50.0
+}
+
+### 6. Add free spins
+POST {{SlotMachineAPI_HostAddress}}/api/users/1/free-spins
+Content-Type: application/json
+
+{
+  "count": 5
+}
+
+### 7. Check if user can play
+GET {{SlotMachineAPI_HostAddress}}/api/games/1/can-play
+
+### 8. Spin the slot machine
+POST {{SlotMachineAPI_HostAddress}}/api/games/1/spin
+Content-Type: application/json
+
+{
+  "betAmount": 1.0
+}
+
+### 9. Get game history
+GET {{SlotMachineAPI_HostAddress}}/api/games/1/history?limit=20
+
+### 10. Cashout user balance
+POST {{SlotMachineAPI_HostAddress}}/api/users/1/cashout
+
+### 11. Get all symbols
+GET {{SlotMachineAPI_HostAddress}}/api/symbols
+
+### 12. Get symbol statistics
+GET {{SlotMachineAPI_HostAddress}}/api/symbols/statistics
+
+### 13. Get specific symbol
+GET {{SlotMachineAPI_HostAddress}}/api/symbols/1
+
+### 14. Update symbol value and weight
+PUT {{SlotMachineAPI_HostAddress}}/api/symbols/1
+Content-Type: application/json
+
+{
+  "value": 0.50,
+  "weight": 300
+}
+
+### 15. Reset symbols to defaults
+POST {{SlotMachineAPI_HostAddress}}/api/symbols/reset-to-defaults

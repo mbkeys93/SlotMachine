@@ -1,0 +1,81 @@
+@using SlotMachineUI.Models
+
+<MudCard Style="background: #5367c0; color: white;">
+    <MudCardContent>
+        <!-- Quick Actions Section -->
+        <MudText Typo="Typo.h6" Class="mb-3 text-center" Style="color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); font-weight: bold;">Quick Actions</MudText>
+        
+        <MudSelect T="decimal" 
+                   Label="Add Cash Amount" 
+                   Variant="Variant.Filled"
+                   Class="mb-3"
+                   @bind-Value="selectedCashAmount"
+                   Style="max-width: 200px; background: rgba(255,255,255,0.73); border-radius: 8px;">
+            <MudSelectItem Value="5m">$5</MudSelectItem>
+            <MudSelectItem Value="10m">$10</MudSelectItem>
+            <MudSelectItem Value="25m">$25</MudSelectItem>
+            <MudSelectItem Value="50m">$50</MudSelectItem>
+            <MudSelectItem Value="100m">$100</MudSelectItem>
+            <MudSelectItem Value="500m">$500</MudSelectItem>
+        </MudSelect>
+        
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Success" 
+                   OnClick="AddSelectedCash"
+                   FullWidth="true"
+                   Disabled="selectedCashAmount <= 0"
+                   Class="mb-3">
+            Add @($"{selectedCashAmount:C0}")
+        </MudButton>
+        
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Warning" 
+                   OnClick="() => OnCashout.InvokeAsync()"
+                   FullWidth="true"
+                   Disabled="User.Balance <= 0"
+                   Class="mb-3">
+            Cashout
+        </MudButton>
+        
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Error" 
+                   OnClick="() => OnLogout.InvokeAsync()"
+                   FullWidth="true"
+                   Class="mb-4">
+            Logout
+        </MudButton>
+        
+        <MudDivider Class="my-4" />
+        
+        <!-- Player Info Section -->
+        <MudText Typo="Typo.h6" Class="mb-3 text-center" Style="color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); font-weight: bold;">Player Info</MudText>
+        
+        <MudList T="string">
+            <MudListItem Text="@($"Name: {User.UserName}")" />
+            <MudListItem Text="@($"Balance: ${User.Balance:F2}")" />
+            <MudListItem Text="@($"Free Spins: {User.FreeSpins}")" />
+            <MudListItem Text="@($"Multiplier: {User.Multiplier}")" />
+        </MudList>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter]
+    public User User { get; set; } = null!;
+    
+    [Parameter]
+    public EventCallback<decimal> OnAddCash { get; set; }
+    
+    [Parameter]
+    public EventCallback OnCashout { get; set; }
+    
+    [Parameter]
+    public EventCallback<Task> OnLogout { get; set; }
+
+    private decimal selectedCashAmount = 10m;
+
+    private void AddSelectedCash()
+    {
+        OnAddCash.InvokeAsync(selectedCashAmount);
+    }
+} 

@@ -1,0 +1,150 @@
+﻿@page "/"
+@using SlotMachineUI.Services
+@using SlotMachineUI.Models
+@inject ISlotMachineService SlotMachineService
+@inject ISnackbar Snackbar
+
+<PageTitle>Slot Machine</PageTitle>
+
+<MudPaper MaxWidth="MaxWidth.Large" Class="pa-4 mt-4 m-3" Elevation="3">
+    
+    @if (currentUser == null)
+    {
+        <UserLogin OnUserCreated="HandleUserCreated" />
+    }
+    else
+    {
+        <!-- Slot Machine and Quick Actions - Side by Side -->
+        <MudContainer Class="d-flex justify-center mb-4">
+            <MudGrid Style="width: 90%; max-width: 1200px;">
+                <MudItem xs="12" md="8">
+                    <SlotMachineGame 
+                        User="currentUser" 
+                        OnSpin="HandleSpin"
+                        OnUserUpdated="HandleUserUpdated" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <UserPanel 
+                        User="currentUser" 
+                        OnAddCash="HandleAddCash"
+                        OnCashout="HandleCashout"
+                        OnLogout="HandleLogout" />
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+        
+        <MudDivider Class="my-4" />
+        
+        <!-- Game History Section -->
+        <MudText Typo="Typo.h5" Class="mb-3">📊 Recent Games (Last 20)</MudText>
+        <GameHistory @ref="gameHistoryRef" UserId="currentUser.UserId" />
+    }
+</MudPaper>
+
+@code {
+    private User? currentUser;
+    private int? currentUserId;
+    private GameHistory? gameHistoryRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUserId = await GetStoredUserId();
+        if (currentUserId.HasValue)
+        {
+            currentUser = await SlotMachineService.GetUserAsync(currentUserId.Value);
+        }
+    }
+
+    private async Task HandleUserCreated(User user)
+    {
+        currentUser = user;
+        currentUserId = user.UserId;
+        await StoreUserId(user.UserId);
+        
+        if (user.Balance > 0 || user.FreeSpins > 0)
+        {
+            Snackbar.Add($"Welcome back, {user.UserName}! Balance: {user.Balance:C2}, Free Spins: {user.FreeSpins}", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add($"Welcome, {user.UserName}! Add some cash to start playing!", Severity.Info);
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task HandleUserUpdated(User user)
+    {
+        currentUser = user;
+        StateHasChanged();
+    }
+
+    private async Task HandleSpin(Game game)
+    {
+        if (game.IsWin)
+        {
+            Snackbar.Add($"🎉 You won {game.WinAmount:C2}!", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add("Better luck next time!", Severity.Info);
+        }
+        
+        // Check for Bonus symbols and show free spins message
+        var bonusCount = game.SpinResult.Split(',').Count(s => s.Trim() == "Bonus");
+        if (bonusCount > 0)
+        {
+            var freeSpinsAwarded = bonusCount == 3 ? 10 : bonusCount * 5;
+            Snackbar.Add($"🎁 Bonus! You earned {freeSpinsAwarded} free spins!", Severity.Warning);
+        }
+        
+        // Refresh user data
+        currentUser = await SlotMachineService.GetUserAsync(currentUser!.UserId);
+        
+        // Refresh game history to show the new spin
+        if (gameHistoryRef != null)
+        {
+            await gameHistoryRef.RefreshAsync();
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task HandleAddCash(decimal amount)
+    {
+        currentUser = await SlotMachineService.AddCashAsync(currentUser!.UserId, amount);
+        Snackbar.Add($"Added {amount:C2} to your balance!", Severity.Success);
+        StateHasChanged();
+    }
+
+    private async Task HandleCashout()
+    {
+        var cashoutAmount = await SlotMachineService.CashoutAsync(currentUser!.UserId);
+        currentUser = await SlotMachineService.GetUserAsync(currentUser.UserId);
+        Snackbar.Add($"Cashed out {cashoutAmount:C2}!", Severity.Success);
+        StateHasChanged();
+    }
+
+    private async Task HandleLogout()
+    {
+        var userName = currentUser?.UserName ?? "User";
+        currentUser = null;
+        currentUserId = null;
+        await StoreUserId(0);
+        Snackbar.Add($"Goodbye, {userName}! Come back soon!", Severity.Info);
+        StateHasChanged();
+    }
+
+    private async Task<int?> GetStoredUserId()
+    {
+        // In a real app, you'd use proper session management
+        // For demo purposes, we'll use a simple approach
+        return null;
+    }
+
+    private async Task StoreUserId(int userId)
+    {
+        // In a real app, you'd use proper session management
+        // For demo purposes, we'll use a simple approach
+    }
+}

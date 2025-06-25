@@ -1,0 +1,70 @@
+@using System.Collections.ObjectModel
+@using SlotMachineUI.Models
+@using SlotMachineUI.Services
+@inject ISlotMachineService SlotMachineService
+
+<MudCard>
+    <MudCardContent>
+        @if (Games.Any())
+        {
+            <MudTable Items="Games" Dense="true" Hover="true" Striped="true" Style="max-height: 400px; overflow-y: auto;">
+                <HeaderContent>
+                    <MudTh>⏰ Time</MudTh>
+                    <MudTh>🎰 Result</MudTh>
+                    <MudTh>💸 Bet</MudTh>
+                    <MudTh>💰 Win</MudTh>
+                    <MudTh>🎯 Status</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.SpinDateTime.ToLocalTime().ToString("hh:mm:ss tt")</MudTd>
+                    <MudTd>
+                        <MudText Typo="Typo.body2" Style="font-family: monospace;">
+                            @SymbolHelper.GetSymbolEmojis(context.SpinResult)
+                        </MudText>
+                    </MudTd>
+                    <MudTd>@($"{context.BetAmount:C2}")</MudTd>
+                    <MudTd>@($"{context.WinAmount:C2}")</MudTd>
+                    <MudTd>
+                        @if (context.IsWin)
+                        {
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small">🎉 WIN</MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Color="Color.Default" Size="Size.Small">😔 LOSS</MudChip>
+                        }
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="text-center">
+                🎰 No games played yet. Start spinning to see your history!
+            </MudText>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter]
+    public int UserId { get; set; }
+
+    private ObservableCollection<Game> Games { get; set; } = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadGameHistory();
+    }
+
+    public async Task RefreshAsync()
+    {
+        await LoadGameHistory();
+    }
+
+    private async Task LoadGameHistory()
+    {
+        Games = new ObservableCollection<Game>(await SlotMachineService.GetGameHistoryAsync(UserId, 20));
+        StateHasChanged();
+    }
+} 

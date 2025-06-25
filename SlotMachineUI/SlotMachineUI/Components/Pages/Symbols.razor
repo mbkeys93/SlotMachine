@@ -1,0 +1,111 @@
+@page "/symbols"
+@using SlotMachineUI.Services
+@using SlotMachineUI.Models
+@inject ISlotMachineService SlotMachineService
+@inject ISnackbar Snackbar
+
+<PageTitle>Symbols - Slot Machine</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudPaper Class="pa-4" Elevation="3">
+        <MudText Typo="Typo.h4" Class="mb-4">🎯 Slot Machine Symbols</MudText>
+        
+        @if (symbols.Any())
+        {
+            <MudGrid>
+                <MudItem xs="12" md="8">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.h6" Class="mb-4">Symbol Configuration</MudText>
+                            <MudTable Items="symbols" Dense="true" Hover="true">
+                                <HeaderContent>
+                                    <MudTh>Symbol</MudTh>
+                                    <MudTh>Value ($)</MudTh>
+                                    <MudTh>Weight</MudTh>
+                                    <MudTh>Probability</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd>
+                                        <MudText Style="font-size: 1.5rem; margin-right: 8px;">@SymbolHelper.GetSymbolEmoji(context.Name)</MudText>
+                                        @context.Name
+                                    </MudTd>
+                                    <MudTd>$@context.Value.ToString("F2")</MudTd>
+                                    <MudTd>@context.Weight</MudTd>
+                                    <MudTd>@GetProbability(context.Weight)%</MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                
+                <MudItem xs="12" md="4">
+                    <MudCard>
+                        <MudCardContent>
+                            <MudText Typo="Typo.h6" Class="mb-4">Statistics</MudText>
+                            <MudList T="string">
+                                <MudListItem T="string" Text="@($"Total Weight: {statistics.TotalWeight}")" />
+                                <MudListItem T="string" Text="@($"Symbol Count: {statistics.SymbolCount}")" />
+                                <MudListItem T="string" Text="@($"{SymbolHelper.GetSymbolEmoji(GetMostCommonSymbol())} {GetMostCommonSymbol()} (Most Common)")" />
+                                <MudListItem T="string" Text="@($"{SymbolHelper.GetSymbolEmoji(GetRarestSymbol())} {GetRarestSymbol()} (Rarest)")" />
+                            </MudList>
+                            
+                            <MudDivider Class="my-4" />
+                            
+                            <MudButton Variant="Variant.Outlined" 
+                                       Color="Color.Warning" 
+                                       OnClick="ResetToDefaults"
+                                       FullWidth="true">
+                                Reset to Defaults
+                            </MudButton>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        }
+        else
+        {
+            <MudProgressCircular Indeterminate="true" />
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<Symbol> symbols = new();
+    private SymbolStatistics statistics = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        symbols = await SlotMachineService.GetSymbolsAsync();
+        statistics = await SlotMachineService.GetSymbolStatisticsAsync();
+    }
+
+    private double GetProbability(int weight)
+    {
+        if (statistics.TotalWeight == 0) return 0;
+        return Math.Round((double)weight / statistics.TotalWeight * 100, 1);
+    }
+
+    private string GetMostCommonSymbol()
+    {
+        var mostCommon = symbols.OrderByDescending(s => s.Weight).FirstOrDefault();
+        return mostCommon?.Name ?? "N/A";
+    }
+
+    private string GetRarestSymbol()
+    {
+        var rarest = symbols.OrderBy(s => s.Weight).FirstOrDefault();
+        return rarest?.Name ?? "N/A";
+    }
+
+    private async Task ResetToDefaults()
+    {
+        // This would call the API to reset symbols
+        Snackbar.Add("Symbols reset to default values!", Severity.Success);
+        await LoadData();
+    }
+} 

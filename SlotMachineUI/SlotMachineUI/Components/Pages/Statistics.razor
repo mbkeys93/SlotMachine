@@ -1,0 +1,58 @@
+@page "/statistics"
+@using SlotMachineUI.Services
+@using SlotMachineUI.Models
+@inject ISlotMachineService SlotMachineService
+
+<PageTitle>Statistics - Slot Machine</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudPaper Class="pa-4" Elevation="3">
+        <MudText Typo="Typo.h4" Class="mb-4">📊 Game Statistics</MudText>
+        
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h6" Class="mb-4">Win Probability Analysis</MudText>
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    To win, you need to get three identical symbols in a row. The probability of winning with each symbol is:
+                </MudText>
+                
+                @if (statistics.Symbols.Any())
+                {
+                    <MudTable Items="statistics.Symbols.OrderByDescending(s => GetProbability(s.Weight))" Dense="true" Hover="true">
+                        <HeaderContent>
+                            <MudTh>Symbol</MudTh>
+                            <MudTh>Individual Probability</MudTh>
+                            <MudTh>Win Probability</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.Name</MudTd>
+                            <MudTd>@GetProbability(context.Weight).ToString("F1")%</MudTd>
+                            <MudTd>@GetWinProbability(GetProbability(context.Weight)).ToString("F4")%</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudCardContent>
+        </MudCard>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private SymbolStatistics statistics = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        statistics = await SlotMachineService.GetSymbolStatisticsAsync();
+    }
+
+    private double GetProbability(int weight)
+    {
+        if (statistics.TotalWeight == 0) return 0;
+        return (double)weight / statistics.TotalWeight * 100;
+    }
+
+    private double GetWinProbability(double individualProbability)
+    {
+        // Probability of getting the same symbol 3 times in a row
+        return Math.Pow(individualProbability / 100, 3) * 100;
+    }
+} 
