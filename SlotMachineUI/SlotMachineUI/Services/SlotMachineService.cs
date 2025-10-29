@@ -200,7 +200,8 @@ public class SlotMachineService : ISlotMachineService
         Balance = userResponse.Balance,
         FreeSpins = userResponse.FreeSpins,
         Multiplier = userResponse.Multiplier,
-        CanPlay = userResponse.CanPlay
+        CanPlay = userResponse.CanPlay,
+        ModifiedDateTime = userResponse.ModifiedDateTime
     };
 
     private static Game MapToGame(SpinResponse spinResponse, int userId) => new()
@@ -265,6 +266,7 @@ public class SlotMachineService : ISlotMachineService
         public int FreeSpins { get; init; }
         public int Multiplier { get; init; }
         public bool CanPlay { get; init; }
+        public DateTime ModifiedDateTime { get; init; }
     }
 
     internal record GameHistoryResponse
