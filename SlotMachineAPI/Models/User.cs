@@ -19,6 +19,8 @@ public class User
 
     [Range(1, 10)]
     public int Multiplier { get; set; } = 1;
+
+    public DateTime ModifiedDateTime { get; set; } = DateTime.UtcNow;
     
     // Navigation property for games
     public virtual ICollection<Game> Games { get; set; } = new List<Game>();

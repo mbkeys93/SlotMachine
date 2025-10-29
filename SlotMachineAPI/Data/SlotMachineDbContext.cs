@@ -24,6 +24,7 @@ public class SlotMachineDbContext : DbContext
             entity.Property(e => e.UserName).IsRequired().HasMaxLength(50);
             entity.Property(e => e.Balance).HasColumnType("decimal(18,2)");
             entity.HasIndex(e => e.UserName).IsUnique();
+            entity.Property(e => e.ModifiedDateTime).HasColumnType("TEXT").HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
         
         // Configure Game entity
@@ -53,5 +54,20 @@ public class SlotMachineDbContext : DbContext
         
         // Seed default symbols
         modelBuilder.Entity<Symbol>().HasData(Symbol.GetDefaultSymbols());
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        // Update ModifiedDateTime for all modified User entities
+        var modifiedUsers = ChangeTracker.Entries<User>()
+            .Where(e => e.State == EntityState.Modified)
+            .Select(e => e.Entity);
+        
+        foreach (var user in modifiedUsers)
+        {
+            user.ModifiedDateTime = DateTime.UtcNow;
+        }
+        
+        return await base.SaveChangesAsync(cancellationToken);
     }
 } 

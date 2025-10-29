@@ -10,6 +10,7 @@ public record UserResponse
     public int FreeSpins { get; init; }
     public int Multiplier { get; init; }
     public bool CanPlay { get; init; }
+    public DateTime ModifiedDateTime { get; init; }
 }
 
 public record AddCashRequest(decimal Amount);

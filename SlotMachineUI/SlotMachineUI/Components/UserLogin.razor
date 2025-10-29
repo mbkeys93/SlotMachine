@@ -109,7 +109,7 @@
         try
         {
             var allUsers = await SlotMachineService.GetAllUsersAsync();
-            recentUsers = allUsers.ToList();
+            recentUsers = allUsers.OrderByDescending(u => u.ModifiedDateTime).ToList();
         }
         catch (Exception ex)
         {

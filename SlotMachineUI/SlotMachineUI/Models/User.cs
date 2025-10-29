@@ -8,4 +8,5 @@ public class User
     public int FreeSpins { get; set; }
     public int Multiplier { get; set; }
     public bool CanPlay { get; set; }
+    public DateTime ModifiedDateTime { get; set; }
 } 

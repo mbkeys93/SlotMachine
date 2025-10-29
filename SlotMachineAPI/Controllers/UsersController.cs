@@ -152,6 +152,7 @@ public class UsersController : ControllerBase
         Balance = user.Balance,
         FreeSpins = user.FreeSpins,
         Multiplier = user.Multiplier,
-        CanPlay = user.CanPlay()
+        CanPlay = user.CanPlay(),
+        ModifiedDateTime = user.ModifiedDateTime
     };
 } 
